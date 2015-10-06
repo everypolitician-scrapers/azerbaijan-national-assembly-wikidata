@@ -9,35 +9,24 @@ require 'wikidata/fetcher'
 require 'mediawiki_api'
 
 
-def candidates
+def members
   morph_api_url = 'https://api.morph.io/tmtmtmtm/azerbaijan-national-assembly-wikipedia/data.json'
   morph_api_key = ENV["MORPH_API_KEY"]
   result = RestClient.get morph_api_url, params: {
     key: morph_api_key,
-    query: "select wikiname from data"
+    query: "select DISTINCT(wikiname) AS wikiname from data"
   }
   JSON.parse(result, symbolize_names: true)
 end
 
-def wikidata_ids(names)
-  client = MediawikiApi::Client.new "https://az.wikipedia.org/w/api.php"
-  res = names.each_slice(50).map { |sliced|
-    page_args = { 
-      prop: 'pageprops',
-      ppprop: 'wikibase_item',
-      titles: sliced.join("|"),
-      token_type: false,
-    }
-    response = client.action :query, page_args 
-    response.data['pages'].find_all { |p| p.last.key? 'pageprops' }.map { |p| 
-      [ p.last['title'], p.last['pageprops']['wikibase_item'] ]
-    }
-  }
-  Hash[ res.flatten(1) ]
-end
-
-wikidata_ids(candidates.map { |c| c[:wikiname] }).each do |p|
-  data = WikiData::Fetcher.new(id: p.last).data('az') or next
+WikiData.ids_from_pages('az', members.map { |c| c[:wikiname] }).each_with_index do |p, i|
+  data = WikiData::Fetcher.new(id: p.last).data('az') rescue nil
+  unless data
+    warn "No data for #{p}"
+    next
+  end
+  data[:original_wikiname] = p.first
   ScraperWiki.save_sqlite([:id], data)
 end
+
 
