@@ -29,4 +29,6 @@ WikiData.ids_from_pages('az', members.map { |c| c[:wikiname] }).each_with_index 
   ScraperWiki.save_sqlite([:id], data)
 end
 
+require 'rest-client'
+warn RestClient.post ENV['MORPH_REBUILDER_URL'], {} if ENV['MORPH_REBUILDER_URL']
 
