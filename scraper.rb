@@ -3,10 +3,10 @@
 
 require 'wikidata/fetcher'
 
-names = EveryPolitician::Wikidata.morph_wikinames(source: 'tmtmtmtm/azerbaijan-national-assembly-wikipedia', column: 'wikiname')
+morph = EveryPolitician::Wikidata.morph_wikinames(source: 'tmtmtmtm/azerbaijan-national-assembly-wikipedia', column: 'wikidata')
 
-cat_5 = WikiData::Category.new( 'Kateqoriya:Azərbaycan Respublikası Milli Məclisinin V çağırış deputatları', 'az').member_titles
-cat_4 = WikiData::Category.new( 'Kateqoriya:Azərbaycan Respublikası Milli Məclisinin IV çağırış deputatları', 'az').member_titles
+cat_5 = WikiData::Category.new('Kateqoriya:Azərbaycan Respublikası Milli Məclisinin V çağırış deputatları', 'az').wikidata_ids
+cat_4 = WikiData::Category.new('Kateqoriya:Azərbaycan Respublikası Milli Məclisinin IV çağırış deputatları', 'az').wikidata_ids
 
 # Members of the 4th/5th Convocation
 sparq = <<EOQ
@@ -15,7 +15,6 @@ sparq = <<EOQ
     ?item p:P39 [ ps:P39 wd:Q21269547 ; pq:P2937 ?term ]
   }
 EOQ
-ids = EveryPolitician::Wikidata.sparql(sparq)
+p39s = EveryPolitician::Wikidata.sparql(sparq)
 
-EveryPolitician::Wikidata.scrape_wikidata(ids: ids, names: { az: names | cat_4 | cat_5 })
-
+EveryPolitician::Wikidata.scrape_wikidata(ids: p39s | morph | cat_4 | cat_5)
